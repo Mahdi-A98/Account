@@ -1,0 +1,5 @@
+venv
+.env
+Account/.env
+Account
+*.pyc
