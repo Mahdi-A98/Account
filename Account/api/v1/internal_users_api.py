@@ -14,3 +14,18 @@ async def update_user_data(user_data:dict=Body(...), update_data: AdminUserUpdat
     if not result.modified_count:
         return JSONResponse({"message": "Nothig changed"}, status_code=215)
     return JSONResponse({"message": str(result)}, status_code=status.HTTP_202_ACCEPTED)
+
+
+@router.post(
+    "/user_profile_X",
+    response_description="User profile for internal services access",
+    dependencies=[Depends(AllowedServices(["authentication"]))],
+)
+async def user_profile_x(user_data:dict=Body(...)): # depend on login
+    account_db = collections['users_collection']
+    result = await account_db.find_one({"$or":[{"username": user_data.get("username")},
+                                                {"email": user_data.get("email")}]})
+    result.pop("_id")
+    if not result:
+        return JSONResponse({"message": "User not found "}, status_code=status.HTTP_404_NOT_FOUND)
+    return JSONResponse({"message": "User has found", "data": result}, status_code=status.HTTP_200_OK)
