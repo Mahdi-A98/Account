@@ -1,3 +1,6 @@
+import pymongo
+import motor.motor_asyncio
+from bson.objectid import ObjectId
 
 from config import settings
 
@@ -37,3 +40,11 @@ class MogodbManager:
     async def delete(self, collection_name, _id):
         result = self.database[collection_name].delete_one({"_id":ObjectId(_id)})
         return result.deleted_count
+
+
+async def sess_db():
+    account_db = MogodbManager("account_db")
+    account_db.database['users_colection'].create_index("username", unique=True)
+    account_db.database['users_colection'].create_index("email", unique=True)
+    # account_db.database["users_colection"].create_index(("email", pymongo.TEXT), unique=True )
+    return account_db
