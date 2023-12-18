@@ -1,3 +1,30 @@
+# In the name of GOD
+
+from fastapi import APIRouter, Depends, status, Body
+from fastapi.responses import Response, JSONResponse
+
+from typing import Annotated
+import json
+
+from models.users import User, UserLogin, UserRegister, UserUpdate, UserCollection
+from config.dependencies import check_login_status, AllowedServices
+from db.db import databases, collections
+
+
+LoginDep = Annotated[str, Depends(check_login_status)]
+
+
+
+router = APIRouter(
+    prefix="/users",
+    tags=["users"],
+    responses={404: {"description":"Not found"}, 307: {"detail":"method not allowed"}},
+    )
+
+
+
+
+
 @router.post(
     "/update_profile",
     response_description="Update profile",
