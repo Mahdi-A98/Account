@@ -1,3 +1,45 @@
+# In the name of GOD
+
+from fastapi import APIRouter, Depends, status, Body
+from fastapi.responses import Response, JSONResponse
+
+from typing import Annotated
+import json
+
+from models.users import User, UserLogin, UserRegister, UserUpdate, UserCollection, AdminUserUpdate
+from config.dependencies import check_login_status, AllowedServices, get_service
+from db.db import databases, collections
+
+
+LoginDep = Annotated[str, Depends(check_login_status)]
+ServiceDep = Annotated[str, Depends(get_service)]
+
+
+
+router = APIRouter(
+    prefix="/users",
+    tags=["users"],
+    responses={404: {"description":"Not found"}, 307: {"detail":"method not allowed"}},
+    dependencies=[Depends(get_service)])
+
+
+
+
+@router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED,
+            dependencies=[Depends(AllowedServices(["authentication"]))])
+async def register(user_object: UserRegister= Body(...)):
+
+    user_data = user_object.model_dump(by_alias=True, exclude=["id", "password"])
+    user_data['password'] = user_object.password.get_secret_value()
+    
+    user_collection = collections["users_collection"]
+    existed_user =  await user_collection.find_one({"$or":[{"username":{"$eq": user_data.get("username"), "$ne": None}},
+                                                            {"email": {"$eq":user_data.get("email"), "$ne": None}}]})
+    if existed_user:
+        return JSONResponse({"message": "User with this username aready exist!!"}, status_code=status.HTTP_401_UNAUTHORIZED)
+    new_user = await user_collection.insert_one(user_data)
+    new_user = await user_collection.find_one({"_id": new_user.inserted_id})
+    return new_user
 
 
 
