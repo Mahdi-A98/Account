@@ -1,0 +1,32 @@
+services:
+  mongodb:
+    image: mongo:6-jammy
+    ports:
+      - '27017:27017'
+    volumes:
+      - dbdata6:/data/db
+    networks:
+      - accountnetwork
+
+  app:
+    build: .
+    container_name: account_app
+    command: uvicorn main:app --host 0.0.0.0 --port 8003 --reload 
+    ports:
+      - 8003:8003
+    volumes:
+      - .:/code/
+    depends_on:
+      - mongodb
+    networks:
+      - accountnetwork
+    links:
+      - "authorizaton:authorizaton-app"
+
+networks:
+  accountnetwork:
+    name: accountnetwork
+
+
+volumes:
+  dbdata6:
