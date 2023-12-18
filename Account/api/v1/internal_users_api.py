@@ -1,3 +1,29 @@
+
+
+
+@router.post(
+    "/login",
+    response_description="User Login",
+    response_model=User,
+    response_model_by_alias=False,
+    dependencies=[Depends(AllowedServices(["authentication"]))]
+)
+async def login(login_data:UserLogin=Body(...)):
+    """
+    check input credential to be in User collection and pass it to athorization.
+    """
+    users_collection = collections["users_collection"]
+    data = login_data.model_dump(by_alias=True, exclude=["id", "password"])
+    data['password'] = login_data.password.get_secret_value()
+    existed_user =  await users_collection.find_one({"$or":[{"username":{"$eq": data.get("username"), "$ne": None}},
+                                                            {"email": {"$eq":data.get("email"), "$ne": None}}]},)
+    if existed_user:
+        if existed_user.get("password") == data.get("password"):
+            return existed_user
+        return JSONResponse({"message": "password doesn't match!!"}, status_code=status.HTTP_401_UNAUTHORIZED)
+    return JSONResponse({"message": "Invalid username or email"}, status_code=status.HTTP_401_UNAUTHORIZED)
+
+
 @router.post(
     "/update_user_data",
     response_description="Update profile for internal services access",
